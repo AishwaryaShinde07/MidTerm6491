@@ -130,6 +130,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.jfree.chart.util.DrawMarker;
 import org.jfree.chart.LegendItem;
 import org.jfree.chart.LegendItemCollection;
 import org.jfree.chart.axis.CategoryAxis;
@@ -961,7 +963,17 @@ public abstract class AbstractCategoryItemRenderer extends AbstractRenderer
     public void drawRangeMarker(Graphics2D g2, CategoryPlot plot,
             ValueAxis axis, Marker marker, Rectangle2D dataArea) {
 
-        if (marker instanceof ValueMarker) {
+    	DrawMarker dm=new DrawMarker();
+    	dm.drawDomainRangeMarker(marker, axis, plot, dataArea, g2, plot.getDomainAxisEdge(),
+                PlotOrientation.VERTICAL, PlotOrientation.HORIZONTAL,
+                (PlotOrientation orientation, Line2D line, RectangleAnchor anchor) -> calculateRangeMarkerTextAnchorPoint(
+                        g2, orientation, dataArea, line.getBounds2D(), marker.getLabelOffset(),
+                        LengthAdjustmentType.EXPAND, anchor),
+                (PlotOrientation orientation, Rectangle2D rect, RectangleAnchor anchor) -> calculateRangeMarkerTextAnchorPoint(
+                        g2, orientation, dataArea, rect, marker.getLabelOffset(),
+                        marker.getLabelOffsetType(), anchor));
+        
+    	/*if (marker instanceof ValueMarker) {
             ValueMarker vm = (ValueMarker) marker;
             double value = vm.getValue();
             Range range = axis.getRange();
@@ -1109,6 +1121,7 @@ public abstract class AbstractCategoryItemRenderer extends AbstractRenderer
             }
             g2.setComposite(savedComposite);
         }
+        */
     }
 
     /**
