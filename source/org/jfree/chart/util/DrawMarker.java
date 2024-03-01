@@ -20,8 +20,6 @@ import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.AbstractXYItemRenderer.Interface3;
-import org.jfree.chart.renderer.xy.AbstractXYItemRenderer.Interface4;
 import org.jfree.data.Range;
 import org.jfree.text.TextUtilities;
 import org.jfree.ui.GradientPaintTransformer;
@@ -62,7 +60,17 @@ public class DrawMarker {
         return RectangleAnchor.coordinates(anchorRect, anchor);
 
     }
+    
+    @FunctionalInterface
+	public interface Interface3 {
+		Point2D apply(PlotOrientation orientation, Line2D line, RectangleAnchor anchor);
+	}
 
+	@FunctionalInterface
+	public interface Interface4 {
+		Point2D apply(PlotOrientation orientation, Rectangle2D rect, RectangleAnchor anchor);
+	}
+   
 	public void drawDomainRangeMarker(Marker marker, ValueAxis domainAxis, Plot plot, Rectangle2D dataArea,
 			Graphics2D g2, RectangleEdge arg0, PlotOrientation arg1, PlotOrientation arg2, Interface3 arg3,
 			Interface4 arg4) {
