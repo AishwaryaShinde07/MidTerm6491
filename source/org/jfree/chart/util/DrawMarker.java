@@ -48,18 +48,23 @@ public class DrawMarker {
             Rectangle2D markerArea, RectangleInsets markerOffset,
             LengthAdjustmentType labelOffsetType, RectangleAnchor anchor) {
 
-        Rectangle2D anchorRect = null;
-        if (orientation == PlotOrientation.HORIZONTAL) {
-            anchorRect = markerOffset.createAdjustedRectangle(markerArea,
-                    labelOffsetType, LengthAdjustmentType.CONTRACT);
-        }
-        else if (orientation == PlotOrientation.VERTICAL) {
-            anchorRect = markerOffset.createAdjustedRectangle(markerArea,
-                    LengthAdjustmentType.CONTRACT, labelOffsetType);
-        }
-        return RectangleAnchor.coordinates(anchorRect, anchor);
+        Rectangle2D anchorRect = anchorRect(orientation, markerArea, markerOffset, labelOffsetType);
+		return RectangleAnchor.coordinates(anchorRect, anchor);
 
     }
+
+	private Rectangle2D anchorRect(PlotOrientation orientation, Rectangle2D markerArea, RectangleInsets markerOffset,
+			LengthAdjustmentType labelOffsetType) {
+		Rectangle2D anchorRect = null;
+		if (orientation == PlotOrientation.HORIZONTAL) {
+			anchorRect = markerOffset.createAdjustedRectangle(markerArea, labelOffsetType,
+					LengthAdjustmentType.CONTRACT);
+		} else if (orientation == PlotOrientation.VERTICAL) {
+			anchorRect = markerOffset.createAdjustedRectangle(markerArea, LengthAdjustmentType.CONTRACT,
+					labelOffsetType);
+		}
+		return anchorRect;
+	}
     
     @FunctionalInterface
 	public interface Interface3 {
@@ -79,20 +84,14 @@ public class DrawMarker {
 	 
  
 		if (marker instanceof ValueMarker) {
+			Line2D line = createLineForValueMarkerInXYPlot(marker, domainAxis, plot, dataArea, arg0, arg1, arg2);
 			ValueMarker vm = (ValueMarker) marker;
 			double value = vm.getValue();
 			Range range = domainAxis.getRange();
 			if (!range.contains(value)) {
 				return;
 			}
-			double v = domainAxis.valueToJava2D(value, dataArea, arg0);
 			PlotOrientation orientation = ((XYPlot) plot).getOrientation();
-			Line2D line = null;
-			if (orientation == arg1) {
-				line = new Line2D.Double(dataArea.getMinX(), v, dataArea.getMaxX(), v);
-			} else if (orientation == arg2) {
-				line = new Line2D.Double(v, dataArea.getMinY(), v, dataArea.getMaxY());
-			}
 			final Composite originalComposite = g2.getComposite();
 			g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, marker.getAlpha()));
 			g2.setPaint(marker.getPaint());
@@ -136,11 +135,7 @@ public class DrawMarker {
 			g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, marker.getAlpha()));
 			Paint p = marker.getPaint();
 			if (p instanceof GradientPaint) {
-				GradientPaint gp = (GradientPaint) p;
-				GradientPaintTransformer t = im.getGradientPaintTransformer();
-				if (t != null) {
-					gp = t.transform(gp, rect);
-				}
+				GradientPaint gp = transformGradientPaintForMarker(im, rect, p);
 				g2.setPaint(gp);
 			} else {
 				g2.setPaint(p);
@@ -148,31 +143,26 @@ public class DrawMarker {
 			g2.fill(rect);
 			if (im.getOutlinePaint() != null && im.getOutlineStroke() != null) {
 				if (orientation == arg2) {
-					Line2D line = new Line2D.Double();
-					double y0 = dataArea.getMinY();
-					double y1 = dataArea.getMaxY();
+					 Line2D line = createOutlineAlongYAxis(dataArea, start, end, range, start2d, end2d);
+					
 					g2.setPaint(im.getOutlinePaint());
 					g2.setStroke(im.getOutlineStroke());
 					if (range.contains(start)) {
-						line.setLine(start2d, y0, start2d, y1);
+						//line.setLine(start2d, y0, start2d, y1);
 						g2.draw(line);
 					}
 					if (range.contains(end)) {
-						line.setLine(end2d, y0, end2d, y1);
+						//line.setLine(end2d, y0, end2d, y1);
 						g2.draw(line);
 					}
 				} else if (orientation == arg1) {
-					Line2D line = new Line2D.Double();
-					double x0 = dataArea.getMinX();
-					double x1 = dataArea.getMaxX();
+					Line2D line = createOutlineAlongXAxis(dataArea, start, end, range, start2d, end2d);
 					g2.setPaint(im.getOutlinePaint());
 					g2.setStroke(im.getOutlineStroke());
 					if (range.contains(start)) {
-						line.setLine(x0, start2d, x1, start2d);
 						g2.draw(line);
 					}
 					if (range.contains(end)) {
-						line.setLine(x0, end2d, x1, end2d);
 						g2.draw(line);
 					}
 				}
@@ -194,7 +184,8 @@ public class DrawMarker {
  else
  {
 	 if (marker instanceof ValueMarker) {
-         ValueMarker vm = (ValueMarker) marker;
+         Line2D line = createLineForValueMarkerInCategoryPlot(marker, domainAxis, plot, dataArea);
+		ValueMarker vm = (ValueMarker) marker;
          double value = vm.getValue();
          Range range = domainAxis.getRange();
 
@@ -207,18 +198,6 @@ public class DrawMarker {
                  AlphaComposite.SRC_OVER, marker.getAlpha()));
 
          PlotOrientation orientation = ((CategoryPlot) plot).getOrientation();
-         double v = domainAxis.valueToJava2D(value, dataArea,
-        		 ((CategoryPlot) plot).getRangeAxisEdge());
-         Line2D line = null;
-         if (orientation == PlotOrientation.HORIZONTAL) {
-             line = new Line2D.Double(v, dataArea.getMinY(), v,
-                     dataArea.getMaxY());
-         }
-         else if (orientation == PlotOrientation.VERTICAL) {
-             line = new Line2D.Double(dataArea.getMinX(), v,
-                     dataArea.getMaxX(), v);
-         }
-
          g2.setPaint(marker.getPaint());
          g2.setStroke(marker.getStroke());
          g2.draw(line);
@@ -258,6 +237,8 @@ public class DrawMarker {
         		 ((CategoryPlot) plot).getRangeAxisEdge());
          double low = Math.min(start2d, end2d);
          double high = Math.max(start2d, end2d);
+         
+       
 
          PlotOrientation orientation = ((CategoryPlot) plot).getOrientation();
          Rectangle2D rect = null;
@@ -279,11 +260,7 @@ public class DrawMarker {
          }
          Paint p = marker.getPaint();
          if (p instanceof GradientPaint) {
-             GradientPaint gp = (GradientPaint) p;
-             GradientPaintTransformer t = im.getGradientPaintTransformer();
-             if (t != null) {
-                 gp = t.transform(gp, rect);
-             }
+        	GradientPaint gp = transformGradientPaintForMarker(im, rect, p);
              g2.setPaint(gp);
          }
          else {
@@ -294,32 +271,27 @@ public class DrawMarker {
          // now draw the outlines, if visible...
          if (im.getOutlinePaint() != null && im.getOutlineStroke() != null) {
              if (orientation == PlotOrientation.VERTICAL) {
-                 Line2D line = new Line2D.Double();
-                 double x0 = dataArea.getMinX();
-                 double x1 = dataArea.getMaxX();
+            	 Line2D line = createOutlineAlongXAxis(dataArea, start, end, range, start2d, end2d);
+                 
                  g2.setPaint(im.getOutlinePaint());
                  g2.setStroke(im.getOutlineStroke());
                  if (range.contains(start)) {
-                     line.setLine(x0, start2d, x1, start2d);
+                     //line.setLine(x0, start2d, x1, start2d);
                      g2.draw(line);
                  }
                  if (range.contains(end)) {
-                     line.setLine(x0, end2d, x1, end2d);
+                    // line.setLine(x0, end2d, x1, end2d);
                      g2.draw(line);
                  }
              }
              else if (orientation == PlotOrientation.HORIZONTAL) {
-                 Line2D line = new Line2D.Double();
-                 double y0 = dataArea.getMinY();
-                 double y1 = dataArea.getMaxY();
-                 g2.setPaint(im.getOutlinePaint());
+                 Line2D line = createOutlineAlongYAxis(dataArea, start, end, range, start2d, end2d);
+				g2.setPaint(im.getOutlinePaint());
                  g2.setStroke(im.getOutlineStroke());
                  if (range.contains(start)) {
-                     line.setLine(start2d, y0, start2d, y1);
                      g2.draw(line);
                  }
                  if (range.contains(end)) {
-                     line.setLine(end2d, y0, end2d, y1);
                      g2.draw(line);
                  }
              }
@@ -341,7 +313,81 @@ public class DrawMarker {
          }
          g2.setComposite(savedComposite);
      }
+	 
  }
+	
+  }
+
+	//Extracted Method
+	private Line2D createLineForValueMarkerInXYPlot(Marker marker, ValueAxis domainAxis, Plot plot,
+			Rectangle2D dataArea, RectangleEdge arg0, PlotOrientation arg1, PlotOrientation arg2) {
+		ValueMarker vm = (ValueMarker) marker;
+		double value = vm.getValue();
+		double v = domainAxis.valueToJava2D(value, dataArea, arg0);
+		PlotOrientation orientation = ((XYPlot) plot).getOrientation();
+		Line2D line = null;
+		if (orientation == arg1) {
+			line = new Line2D.Double(dataArea.getMinX(), v, dataArea.getMaxX(), v);
+		} else if (orientation == arg2) {
+			line = new Line2D.Double(v, dataArea.getMinY(), v, dataArea.getMaxY());
+		}
+		return line;
+	}
+
+	//Extracted Method
+	private Line2D createLineForValueMarkerInCategoryPlot(Marker marker, ValueAxis domainAxis, Plot plot, Rectangle2D dataArea) {
+		ValueMarker vm = (ValueMarker) marker;
+		double value = vm.getValue();
+		PlotOrientation orientation = ((CategoryPlot) plot).getOrientation();
+		double v = domainAxis.valueToJava2D(value, dataArea, ((CategoryPlot) plot).getRangeAxisEdge());
+		Line2D line = null;
+		if (orientation == PlotOrientation.HORIZONTAL) {
+			line = new Line2D.Double(v, dataArea.getMinY(), v, dataArea.getMaxY());
+		} else if (orientation == PlotOrientation.VERTICAL) {
+			line = new Line2D.Double(dataArea.getMinX(), v, dataArea.getMaxX(), v);
+		}
+		return line;
+	}
+
+	//Extracted Method
+	private GradientPaint transformGradientPaintForMarker(IntervalMarker im, Rectangle2D rect, Paint p) {
+		GradientPaint gp = (GradientPaint) p;
+		GradientPaintTransformer t = im.getGradientPaintTransformer();
+		if (t != null) {
+			gp = t.transform(gp, rect);
+		}
+		return gp;
+	}
+	
+	//Extracted Method
+	private Line2D createOutlineAlongYAxis(Rectangle2D dataArea, double start, double end, Range range, double start2d,
+			double end2d) {
+		Line2D line = new Line2D.Double();
+		double y0 = dataArea.getMinY();
+		double y1 = dataArea.getMaxY();
+		if (range.contains(start)) {
+			line.setLine(start2d, y0, start2d, y1);
+		}
+		if (range.contains(end)) {
+			line.setLine(end2d, y0, end2d, y1);
+		}
+		return line;
+	}
+	
+	//Extracted Method
+
+	private Line2D createOutlineAlongXAxis(Rectangle2D dataArea, double start, double end, Range range, double start2d, double end2d) {
+		Line2D line = new Line2D.Double();
+		double x0 = dataArea.getMinX();
+		double x1 = dataArea.getMaxX();
+		
+		if (range.contains(start)) {
+			line.setLine(x0, start2d, x1, start2d);
+		}
+		if (range.contains(end)) {
+			line.setLine(x0, end2d, x1, end2d);
+		}
+		return line;
 	}
 }
 
