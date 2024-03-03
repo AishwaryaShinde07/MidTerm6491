@@ -63,6 +63,8 @@
 
 package org.jfree.data;
 
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
 import java.io.Serializable;
 import org.jfree.chart.util.ParamChecks;
 
@@ -474,5 +476,33 @@ public strictfp class Range implements Serializable {
     public String toString() {
         return ("Range[" + this.lower + "," + this.upper + "]");
     }
+
+	public Line2D createOutlineAlongYAxis(Rectangle2D dataArea, double start, double end, double start2d,
+			double end2d) {
+		Line2D line = new Line2D.Double();
+		double y0 = dataArea.getMinY();
+		double y1 = dataArea.getMaxY();
+		if (contains(start)) {
+			line.setLine(start2d, y0, start2d, y1);
+		}
+		if (contains(end)) {
+			line.setLine(end2d, y0, end2d, y1);
+		}
+		return line;
+	}
+
+	public Line2D createOutlineAlongXAxis(Rectangle2D dataArea, double start, double end, double start2d,
+			double end2d) {
+		Line2D line = new Line2D.Double();
+		double x0 = dataArea.getMinX();
+		double x1 = dataArea.getMaxX();
+		if (contains(start)) {
+			line.setLine(x0, start2d, x1, start2d);
+		}
+		if (contains(end)) {
+			line.setLine(x0, end2d, x1, end2d);
+		}
+		return line;
+	}
 
 }

@@ -132,7 +132,12 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.jfree.chart.event.AxisChangeEvent;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.Plot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.ValueMarker;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.util.AttrStringUtils;
 import org.jfree.chart.util.ParamChecks;
 import org.jfree.data.Range;
@@ -1784,5 +1789,34 @@ public abstract class ValueAxis extends Axis
         this.leftArrow = SerialUtilities.readShape(stream);
         this.rightArrow = SerialUtilities.readShape(stream);
     }
+
+	public Line2D createLineForValueMarkerInXYPlot(Marker marker, Plot plot, Rectangle2D dataArea, RectangleEdge arg0,
+			PlotOrientation arg1, PlotOrientation arg2) {
+		ValueMarker vm = (ValueMarker) marker;
+		double value = vm.getValue();
+		double v = valueToJava2D(value, dataArea, arg0);
+		PlotOrientation orientation = ((XYPlot) plot).getOrientation();
+		Line2D line = null;
+		if (orientation == arg1) {
+			line = new Line2D.Double(dataArea.getMinX(), v, dataArea.getMaxX(), v);
+		} else if (orientation == arg2) {
+			line = new Line2D.Double(v, dataArea.getMinY(), v, dataArea.getMaxY());
+		}
+		return line;
+	}
+
+	public Line2D createLineForValueMarkerInCategoryPlot(Marker marker, Plot plot, Rectangle2D dataArea) {
+		ValueMarker vm = (ValueMarker) marker;
+		double value = vm.getValue();
+		PlotOrientation orientation = ((CategoryPlot) plot).getOrientation();
+		double v = valueToJava2D(value, dataArea, ((CategoryPlot) plot).getRangeAxisEdge());
+		Line2D line = null;
+		if (orientation == PlotOrientation.HORIZONTAL) {
+			line = new Line2D.Double(v, dataArea.getMinY(), v, dataArea.getMaxY());
+		} else if (orientation == PlotOrientation.VERTICAL) {
+			line = new Line2D.Double(dataArea.getMinX(), v, dataArea.getMaxX(), v);
+		}
+		return line;
+	}
 
 }

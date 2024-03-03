@@ -47,8 +47,10 @@ package org.jfree.chart.plot;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.GradientPaint;
 import java.awt.Paint;
 import java.awt.Stroke;
+import java.awt.geom.Rectangle2D;
 import java.io.Serializable;
 
 import org.jfree.chart.event.MarkerChangeEvent;
@@ -231,5 +233,14 @@ public class IntervalMarker extends Marker implements Cloneable, Serializable {
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
     }
+
+	public GradientPaint transformGradientPaintForMarker(Rectangle2D rect, Paint p) {
+		GradientPaint gp = (GradientPaint) p;
+		GradientPaintTransformer t = getGradientPaintTransformer();
+		if (t != null) {
+			gp = t.transform(gp, rect);
+		}
+		return gp;
+	}
 
 }
