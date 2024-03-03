@@ -79,6 +79,8 @@ public class DrawMarker {
 	public void drawDomainRangeMarker(Marker marker, ValueAxis domainAxis, Plot plot, Rectangle2D dataArea,
 			Graphics2D g2, RectangleEdge arg0, PlotOrientation arg1, PlotOrientation arg2, Interface3 arg3,
 			Interface4 arg4) {
+		
+		
  if (plot instanceof XYPlot)
  {
 	 
@@ -148,11 +150,9 @@ public class DrawMarker {
 					g2.setPaint(im.getOutlinePaint());
 					g2.setStroke(im.getOutlineStroke());
 					if (range.contains(start)) {
-						//line.setLine(start2d, y0, start2d, y1);
 						g2.draw(line);
 					}
 					if (range.contains(end)) {
-						//line.setLine(end2d, y0, end2d, y1);
 						g2.draw(line);
 					}
 				} else if (orientation == arg1) {
@@ -241,23 +241,7 @@ public class DrawMarker {
        
 
          PlotOrientation orientation = ((CategoryPlot) plot).getOrientation();
-         Rectangle2D rect = null;
-         if (orientation == PlotOrientation.HORIZONTAL) {
-             // clip left and right bounds to data area
-             low = Math.max(low, dataArea.getMinX());
-             high = Math.min(high, dataArea.getMaxX());
-             rect = new Rectangle2D.Double(low,
-                     dataArea.getMinY(), high - low,
-                     dataArea.getHeight());
-         }
-         else if (orientation == PlotOrientation.VERTICAL) {
-             // clip top and bottom bounds to data area
-             low = Math.max(low, dataArea.getMinY());
-             high = Math.min(high, dataArea.getMaxY());
-             rect = new Rectangle2D.Double(dataArea.getMinX(),
-                     low, dataArea.getWidth(),
-                     high - low);
-         }
+         Rectangle2D rect = createAdjustedIntervalRectangle(dataArea, low, high, orientation);
          Paint p = marker.getPaint();
          if (p instanceof GradientPaint) {
         	GradientPaint gp = transformGradientPaintForMarker(im, rect, p);
@@ -276,11 +260,9 @@ public class DrawMarker {
                  g2.setPaint(im.getOutlinePaint());
                  g2.setStroke(im.getOutlineStroke());
                  if (range.contains(start)) {
-                     //line.setLine(x0, start2d, x1, start2d);
                      g2.draw(line);
                  }
                  if (range.contains(end)) {
-                    // line.setLine(x0, end2d, x1, end2d);
                      g2.draw(line);
                  }
              }
@@ -317,6 +299,43 @@ public class DrawMarker {
  }
 	
   }
+
+	//Extracted Method
+	private Rectangle2D createAdjustedIntervalRectangle(Rectangle2D dataArea, double low, double high,
+			PlotOrientation orientation) {
+		Rectangle2D rect = null;
+         high = getHighValue(dataArea, high, orientation);
+		low = getLowValue(dataArea, low, orientation);
+		if (orientation == PlotOrientation.HORIZONTAL) {
+             rect = new Rectangle2D.Double(low,
+                     dataArea.getMinY(), high - low,
+                     dataArea.getHeight());
+         }
+         else if (orientation == PlotOrientation.VERTICAL) {
+             rect = new Rectangle2D.Double(dataArea.getMinX(),
+                     low, dataArea.getWidth(),
+                     high - low);
+         }
+		return rect;
+	}
+
+	private double getLowValue(Rectangle2D dataArea, double low, PlotOrientation orientation) {
+		if (orientation == PlotOrientation.HORIZONTAL) {
+			low = Math.max(low, dataArea.getMinX());
+		} else if (orientation == PlotOrientation.VERTICAL) {
+			low = Math.max(low, dataArea.getMinY());
+		}
+		return low;
+	}
+
+	private double getHighValue(Rectangle2D dataArea, double high, PlotOrientation orientation) {
+		if (orientation == PlotOrientation.HORIZONTAL) {
+			high = Math.min(high, dataArea.getMaxX());
+		} else if (orientation == PlotOrientation.VERTICAL) {
+			high = Math.min(high, dataArea.getMaxY());
+		}
+		return high;
+	}
 
 	//Extracted Method
 	private Line2D createLineForValueMarkerInXYPlot(Marker marker, ValueAxis domainAxis, Plot plot,
